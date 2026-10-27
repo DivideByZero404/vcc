@@ -1,0 +1,24 @@
+# Default Configuration for Cryptographically Authenticated ARP
+mode: sender           # 'sender' or 'receiver'
+crypto_mode: secure    # 'secure' (SHA-512/DSS/AES-GCM) or 'legacy' (MD5/DSS/DES-CBC)
+
+# Local Node Parameters (e.g. VM 1 Victim / Gateway)
+local_ip: "192.168.56.10"
+local_mac: "08:00:27:11:22:33"
+
+# Peer Node Parameters (e.g. VM 2 Receiver / Verifier)
+peer_ip: "192.168.56.20"
+peer_mac: "08:00:27:AA:BB:CC"
+
+# Gateway Configuration (for spoofing simulations)
+gateway_ip: "192.168.56.1"
+gateway_mac: "AA:BB:CC:DD:EE:FF"
+
+# Attacker Configuration (for VM 3 Kali / Attacker simulation)
+attacker_ip: "192.168.56.30"
+attacker_mac: "11:22:33:44:55:66"
+
+# Network Interface & Settings
+interface: "lo"  # Default loopback for single-machine demo, change to eth0/vboxnet0 on VMs
+timestamp_max_drift: 60  # Acceptable timestamp drift window in seconds
+keys_dir: "keys"

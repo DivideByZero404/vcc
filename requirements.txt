@@ -1,0 +1,5 @@
+pycryptodome>=3.19.0
+scapy>=2.5.0
+pyyaml>=6.0.1
+flask>=3.0.0
+boto3>=1.34.0

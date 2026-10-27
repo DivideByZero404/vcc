@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptographically Authenticated ARP - Security Workbench</title>
+    <style>
+        :root {
+            --bg-body: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-muted: #f1f5f9;
+            --bg-subtle: #f8fafc;
+            
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --border-focus: #3b82f6;
+
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --text-subtle: #94a3b8;
+
+            /* Professional Role Accents */
+            --sender-color: #059669;
+            --sender-light: #ecfdf5;
+            --sender-border: #a7f3d0;
+
+            --attacker-color: #dc2626;
+            --attacker-light: #fef2f2;
+            --attacker-border: #fecaca;
+
+            --receiver-color: #0284c7;
+            --receiver-light: #f0f9ff;
+            --receiver-border: #bae6fd;
+
+            --pass-color: #059669;
+            --fail-color: #dc2626;
+            --warn-color: #d97706;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+
+        /* Top Header */
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #1e293b;
+            background: var(--bg-muted);
+            border: 1px solid var(--border-medium);
+            padding: 4px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-title h1 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            color: var(--text-heading);
+            text-transform: uppercase;
+        }
+
+        .brand-title p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            margin-top: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-header {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            color: var(--text-heading);
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-header:hover {
+            background: var(--bg-muted);
+            border-color: var(--text-muted);
+        }
+
+        .btn-header.mode-secure {
+            color: var(--sender-color);
+            background: var(--sender-light);
+            border-color: var(--sender-border);
+        }
+
+        .btn-header.mode-legacy {
+            color: var(--warn-color);
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .btn-header.stream-running {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+        }
+
+        .btn-header.danger {
+            color: var(--attacker-color);
+            border-color: var(--attacker-border);
+            background: var(--attacker-light);
+        }
+        .btn-header.danger:hover {
+            background: #fee2e2;
+        }
+
+        .select-header {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            color: var(--text-heading);
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 0.74rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Role Switcher Toolbar */
+        .role-nav-bar {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            padding: 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .role-nav-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .role-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-heading);
+            background: var(--bg-muted);
+        }
+
+        .tab-btn.active-all {
+            background: var(--text-heading);
+            color: #ffffff;
+            border-color: var(--text-heading);
+        }
+
+        .tab-btn.active-sender {
+            background: var(--sender-light);
+            color: var(--sender-color);
+            border-color: var(--sender-border);
+        }
+
+        .tab-btn.active-attacker {
+            background: var(--attacker-light);
+            color: var(--attacker-color);
+            border-color: var(--attacker-border);
+        }
+
+        .tab-btn.active-receiver {
+            background: var(--receiver-light);
+            color: var(--receiver-color);
+            border-color: var(--receiver-border);
+        }
+
+        /* Metrics Ribbon */
+        .metrics-ribbon {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-light);
+            padding: 7px 24px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 14px;
+            font-size: 0.74rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+        }
+
+        .metric-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .metric-cell strong {
+            font-size: 0.86rem;
+            color: var(--text-heading);
+        }
+
+        /* Workspace Grid */
+        .workspace-container {
+            flex: 1;
+            padding: 18px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 1100px) {
+            .roles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Role Workstation Card */
+        .role-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .role-panel:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+        }
+
+        /* Role Panel Header */
+        .panel-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .panel-header-title {
+            font-size: 0.86rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-header-subtitle {
+            font-size: 0.7rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .node-tag {
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            text-transform: uppercase;
+        }
+
+        /* Card Color Accents */
+        .panel-sender { border-top: 4px solid var(--sender-color); }
+        .panel-sender .panel-header { background: var(--sender-light); }
+        .panel-sender .panel-header-title { color: var(--sender-color); }
+        .panel-sender .node-tag {
+            background: var(--bg-surface);
+            color: var(--sender-color);
+            border: 1px solid var(--sender-border);
+        }
+
+        .panel-attacker { border-top: 4px solid var(--attacker-color); }
+        .panel-attacker .panel-header { background: var(--attacker-light); }
+        .panel-attacker .panel-header-title { color: var(--attacker-color); }
+        .panel-attacker .node-tag {
+            background: var(--bg-surface);
+            color: var(--attacker-color);
+            border: 1px solid var(--attacker-border);
+        }
+
+        .panel-receiver { border-top: 4px solid var(--receiver-color); }
+        .panel-receiver .panel-header { background: var(--receiver-light); }
+        .panel-receiver .panel-header-title { color: var(--receiver-color); }
+        .panel-receiver .node-tag {
+            background: var(--bg-surface);
+            color: var(--receiver-color);
+            border: 1px solid var(--receiver-border);
+        }
+
+        /* Panel Body Content */
+        .panel-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Form Inputs */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .form-input {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            border-radius: 4px;
+            padding: 6px 9px;
+            font-size: 0.76rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            color: var(--text-heading);
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+
+        .form-input.input-invalid {
+            border-color: var(--attacker-color) !important;
+            background: #fef2f2 !important;
+        }
+
+        .inline-error {
+            font-size: 0.65rem;
+            color: var(--attacker-color);
+            font-weight: 600;
+            display: none;
+            margin-top: 1px;
+        }
+
+        .form-select {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            border-radius: 4px;
+            padding: 6px 9px;
+            font-size: 0.76rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            color: var(--text-heading);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .field-actions-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .btn-field-action {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-medium);
+            color: var(--text-body);
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-size: 0.66rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-field-action:hover {
+            background: #e2e8f0;
+            color: var(--text-heading);
+        }
+
+        /* Live Cryptographic Hash Box */
+        .live-hash-card {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .live-hash-title {
+            font-size: 0.66rem;
+            font-weight: 800;
+            color: var(--sender-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .digest-status-pill {
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+        .digest-status-pill.sync {
+            background: #dcfce7;
+            color: var(--sender-color);
+            border: 1px solid var(--sender-border);
+        }
+        .digest-status-pill.invalid {
+            background: #fee2e2;
+            color: var(--attacker-color);
+            border: 1px solid var(--attacker-border);
+        }
+
+        .live-hash-value {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.7rem;
+            color: #0f172a;
+            word-break: break-all;
+            background: var(--bg-surface);
+            padding: 6px 8px;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            max-height: 48px;
+            overflow-y: auto;
+        }
+
+        .canonical-string-preview {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.66rem;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        /* Action Buttons */
+        .btn-action-primary {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 5px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid transparent;
+        }
+
+        .btn-action-sender {
+            background: var(--sender-color);
+            color: #ffffff;
+        }
+        .btn-action-sender:hover {
+            background: #047857;
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+        }
+        .btn-action-sender:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-action-attacker {
+            background: var(--attacker-color);
+            color: #ffffff;
+            margin-top: 4px;
+        }
+        .btn-action-attacker:hover {
+            background: #b91c1c;
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+        }
+
+        .attack-choice-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .attack-tab-btn {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 7px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-body);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .attack-tab-btn:hover {
+            border-color: var(--attacker-border);
+            background: var(--attacker-light);
+            color: var(--attacker-color);
+        }
+
+        .attack-tab-btn.selected {
+            border-color: var(--attacker-color);
+            background: var(--attacker-light);
+            color: var(--attacker-color);
+        }
+
+        /* Receiver Verification Pipeline */
+        .verification-steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .verif-step-row {
+            background: var(--bg-muted);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 6px 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .verif-badge {
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.66rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .verif-badge.pass {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .verif-badge.fail {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .verif-badge.wait {
+            background: #e2e8f0;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .verif-badge.skip {
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1px dashed #cbd5e1;
+        }
+
+        /* Verdict Notification Box */
+        .verdict-box {
+            border-radius: 5px;
+            padding: 9px 12px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            line-height: 1.4;
+            border: 1px solid transparent;
+        }
+
+        .verdict-box.accept {
+            background: var(--sender-light);
+            border-color: var(--sender-border);
+            color: var(--sender-color);
+        }
+
+        .verdict-box.reject {
+            background: var(--attacker-light);
+            border-color: var(--attacker-border);
+            color: var(--attacker-color);
+        }
+
+        .verdict-box.waiting {
+            background: var(--bg-muted);
+            border-color: var(--border-light);
+            color: var(--text-muted);
+        }
+
+        /* ARP Cache Table */
+        .arp-table-wrap {
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--bg-surface);
+        }
+
+        .arp-table-header {
+            background: var(--bg-muted);
+            padding: 7px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--receiver-color);
+            text-transform: uppercase;
+        }
+
+        .btn-table-reset {
+            background: transparent;
+            border: none;
+            color: var(--receiver-color);
+            cursor: pointer;
+            font-size: 0.66rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .btn-table-reset:hover {
+            text-decoration: underline;
+        }
+
+        .arp-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+        }
+
+        .arp-table th, .arp-table td {
+            padding: 5px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .arp-table th {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .arp-table td {
+            color: var(--text-heading);
+        }
+
+        .tag-status {
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.64rem;
+            font-weight: 800;
+        }
+        .tag-status.auth {
+            background: var(--sender-light);
+            color: var(--sender-color);
+            border: 1px solid var(--sender-border);
+        }
+        .tag-status.init {
+            background: var(--receiver-light);
+            color: var(--receiver-color);
+            border: 1px solid var(--receiver-border);
+        }
+
+        /* Recent Packet History Table */
+        .history-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .history-header {
+            background: var(--bg-muted);
+            padding: 9px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-heading);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+        }
+
+        .history-table th, .history-table td {
+            padding: 6px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .history-table th {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .type-pill {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 800;
+        }
+        .type-pill.legitimate { background: #dcfce7; color: var(--sender-color); }
+        .type-pill.spoofing { background: #fee2e2; color: var(--attacker-color); }
+        .type-pill.tampering { background: #fef3c7; color: #b45309; }
+        .type-pill.replay { background: #ffedd5; color: #c2410c; }
+
+        /* Security Audit Log Terminal */
+        .terminal-container {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .terminal-header {
+            background: #1e293b;
+            padding: 7px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .btn-clear-log {
+            background: transparent;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            padding: 2px 7px;
+            border-radius: 3px;
+            font-size: 0.66rem;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-clear-log:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+
+        .terminal-logs {
+            padding: 10px 14px;
+            font-family: ui-monospace, SFMono-Regular, monospace;
+            font-size: 0.72rem;
+            line-height: 1.5;
+            max-height: 160px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            color: #cbd5e1;
+        }
+
+        .log-entry.info { color: #93c5fd; }
+        .log-entry.pass { color: #86efac; }
+        .log-entry.fail { color: #fca5a5; }
+        .log-entry.warn { color: #fde047; }
+
+        /* Full View Switcher States */
+        .hidden-role { display: none !important; }
+        .focused-role { grid-column: 1 / -1 !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-brand">
+            <span class="brand-badge">RFC 826 / SEC</span>
+            <div class="brand-title">
+                <h1>Cryptographically Authenticated ARP</h1>
+                <p>SECURITY WORKBENCH | DYNAMIC REAL-TIME PAYLOAD & HASHING ENGINE</p>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <!-- Mode Toggle -->
+            <button id="btn-mode" class="btn-header mode-secure" onclick="toggleCryptoMode()">
+                <span id="mode-label">MODE: SECURE (SHA-512 / DSS / AES-256-GCM)</span>
+            </button>
+
+            <!-- Stream Interval Selector -->
+            <select id="stream-interval-select" class="select-header" onchange="onStreamConfigChange()">
+                <option value="0.5">Interval: 0.5s</option>
+                <option value="1.0">Interval: 1.0s</option>
+                <option value="2.0" selected>Interval: 2.0s</option>
+                <option value="5.0">Interval: 5.0s</option>
+            </select>
+
+            <!-- Stream Mode Selector -->
+            <select id="stream-mode-select" class="select-header" onchange="onStreamConfigChange()">
+                <option value="legitimate" selected>Stream: Legitimate Only</option>
+                <option value="mixed">Stream: Mixed Traffic (70/30)</option>
+                <option value="spoofing">Stream: Spoofing Attacks</option>
+                <option value="tampering">Stream: Tampering Attacks</option>
+                <option value="replay">Stream: Replay Attacks</option>
+            </select>
+
+            <!-- Stream Toggle Button -->
+            <button id="btn-stream" class="btn-header" onclick="toggleStream()">
+                <span id="stream-label">START STREAM</span>
+            </button>
+
+            <!-- Simulation Reset Button -->
+            <button class="btn-header danger" onclick="confirmResetSimulation()">
+                RESET SIMULATION
+            </button>
+        </div>
+    </header>
+
+    <!-- Role Selection Bar -->
+    <div class="role-nav-bar">
+        <div class="role-nav-title">Select Active Role:</div>
+        <div class="role-tabs">
+            <button class="tab-btn active-all" id="tab-all" onclick="setRoleView('all')">
+                All Roles (Tri-Node Overview)
+            </button>
+            <button class="tab-btn" id="tab-sender" onclick="setRoleView('sender')">
+                Sender: Gateway Node
+            </button>
+            <button class="tab-btn" id="tab-attacker" onclick="setRoleView('attacker')">
+                Attacker: Kali Simulation
+            </button>
+            <button class="tab-btn" id="tab-receiver" onclick="setRoleView('receiver')">
+                Receiver: Verifier Host
+            </button>
+        </div>
+    </div>
+
+    <!-- Metrics Ribbon -->
+    <div class="metrics-ribbon">
+        <div class="metric-cell">
+            <span>VALID ACCEPTED:</span>
+            <strong id="cnt-valid" style="color: var(--sender-color);">0</strong>
+        </div>
+        <div class="metric-cell">
+            <span>PACKETS BLOCKED:</span>
+            <strong id="cnt-rejected" style="color: var(--attacker-color);">0</strong>
+        </div>
+        <div class="metric-cell">
+            <span>SPOOFING DETECTED:</span>
+            <strong id="cnt-spoofing" style="color: var(--warn-color);">0</strong>
+        </div>
+        <div class="metric-cell">
+            <span>REPLAY DETECTED:</span>
+            <strong id="cnt-replay" style="color: var(--warn-color);">0</strong>
+        </div>
+        <div class="metric-cell">
+            <span>TAMPERING DETECTED:</span>
+            <strong id="cnt-tampering" style="color: var(--warn-color);">0</strong>
+        </div>
+        <div class="metric-cell">
+            <span>ACTIVE SEQUENCE:</span>
+            <strong id="active-seq-label">#PKT-0000</strong>
+        </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace-container">
+        
+        <div class="roles-grid" id="roles-grid">
+
+            <!-- ============================================== -->
+            <!-- NODE 1: SENDER (GATEWAY)                       -->
+            <!-- ============================================== -->
+            <div class="role-panel panel-sender" id="card-sender">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-header-title">Sender (Gateway)</div>
+                        <div class="panel-header-subtitle">Key: gateway_private.pem (DSS 2048-bit)</div>
+                    </div>
+                    <span class="node-tag">Node 1</span>
+                </div>
+
+                <div class="panel-body">
+                    <div class="section-label">
+                        <span>Dynamic Live Packet Editor</span>
+                        <span style="font-size:0.65rem; color:var(--text-muted); font-weight:normal;">REAL-TIME VALIDATION</span>
+                    </div>
+
+                    <!-- Dynamic Input Form with Inline Validation -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span>Sender IP</span>
+                                <span class="inline-error" id="err-sender-ip">Invalid IPv4</span>
+                            </label>
+                            <input type="text" id="sender-ip" class="form-input" value="192.168.56.10" oninput="onSenderInputChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span>Sender MAC</span>
+                                <span class="inline-error" id="err-sender-mac">Invalid MAC</span>
+                            </label>
+                            <input type="text" id="sender-mac" class="form-input" value="08:00:27:11:22:33" oninput="onSenderInputChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span>Target IP</span>
+                                <span class="inline-error" id="err-target-ip">Invalid IPv4</span>
+                            </label>
+                            <input type="text" id="sender-target-ip" class="form-input" value="192.168.56.20" oninput="onSenderInputChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span>Target MAC</span>
+                                <span class="inline-error" id="err-target-mac">Invalid MAC</span>
+                            </label>
+                            <input type="text" id="sender-target-mac" class="form-input" value="08:00:27:AA:BB:CC" oninput="onSenderInputChanged()">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span>128-bit Nonce Token</span>
+                                <span class="inline-error" id="err-nonce">Invalid Hex Token</span>
+                            </label>
+                            <input type="text" id="sender-nonce" class="form-input" value="156adce85310615e373d8ea44a84341b" oninput="onSenderInputChanged()">
+                            <div class="field-actions-row">
+                                <button type="button" class="btn-field-action" onclick="refreshSenderNonce()">Generate Fresh Nonce</button>
+                                <button type="button" class="btn-field-action" onclick="setReusedNonceDemo()">Set Known Reused Nonce</button>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span>Timestamp (Unix Epoch Seconds)</span>
+                                <span class="inline-error" id="err-timestamp">Invalid Numeric Epoch</span>
+                            </label>
+                            <input type="text" id="sender-timestamp" class="form-input" value="" placeholder="Auto (Current System Epoch)" oninput="onSenderInputChanged()">
+                            <div class="field-actions-row">
+                                <button type="button" class="btn-field-action" onclick="setCurrentTimestamp()">Set Current Epoch</button>
+                                <button type="button" class="btn-field-action" onclick="setExpiredTimestampDemo()">Set Stale Timestamp (-120s)</button>
+                                <button type="button" class="btn-field-action" onclick="resetSenderDefaults()">Reset Defaults</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Real-Time Hash Computation Box -->
+                    <div class="live-hash-card">
+                        <div class="live-hash-title">
+                            <span id="lbl-live-algo">REAL-TIME SHA-512 DIGEST</span>
+                            <span class="digest-status-pill sync" id="digest-sync-badge">DIGEST SYNCHRONIZED</span>
+                        </div>
+                        <div class="live-hash-value" id="live-hash-output">Calculating digest...</div>
+                        <div class="canonical-string-preview" id="live-canonical-output">Canonical: 192.168.56.10|...</div>
+                    </div>
+
+                    <!-- Dispatch Button -->
+                    <button class="btn-action-primary btn-action-sender" id="btn-dispatch-sender" onclick="sendCustomAuthenticatedArp()">
+                        <span>Dispatch Authenticated ARP Packet</span>
+                    </button>
+
+                    <!-- Transmission Status Preview -->
+                    <div>
+                        <div class="section-label">Last Transmission Log</div>
+                        <div class="live-hash-card" style="font-size: 0.7rem; color: var(--text-body);" id="sender-status-preview">
+                            Ready. Enter values above or click dispatch to transmit.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- NODE 3: ATTACKER (SIMULATION)                  -->
+            <!-- ============================================== -->
+            <div class="role-panel panel-attacker" id="card-attacker">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-header-title">Attacker (Simulation)</div>
+                        <div class="panel-header-subtitle">Key: attacker_private.pem (Unauthorized)</div>
+                    </div>
+                    <span class="node-tag">Node 3</span>
+                </div>
+
+                <div class="panel-body">
+                    <div class="section-label">Select Exploit Scenario</div>
+
+                    <!-- Attack Type Selector -->
+                    <div class="attack-choice-group">
+                        <button class="attack-tab-btn selected" id="btn-atk-spoof" onclick="selectAttackMode('spoof')">
+                            <span>1. ARP Spoofing (Forged Gateway Claim)</span>
+                            <span style="font-size: 0.7rem;">[ACTIVE]</span>
+                        </button>
+                        <button class="attack-tab-btn" id="btn-atk-tamper" onclick="selectAttackMode('tamper')">
+                            <span>2. Packet Tampering (Field Modification)</span>
+                            <span style="font-size: 0.7rem;">[SELECT]</span>
+                        </button>
+                        <button class="attack-tab-btn" id="btn-atk-replay" onclick="selectAttackMode('replay')">
+                            <span>3. Replay Attack (Duplicate Stale Packet)</span>
+                            <span style="font-size: 0.7rem;">[SELECT]</span>
+                        </button>
+                    </div>
+
+                    <!-- Sub-panel: Dynamic Spoofing Parameters -->
+                    <div id="subpanel-spoof" class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span>Gateway IP to Hijack</span>
+                                <span class="inline-error" id="err-spoof-gw">Invalid IPv4</span>
+                            </label>
+                            <input type="text" id="spoof-gw-ip" class="form-input" value="192.168.56.1" oninput="validateSpoofInputs()">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span>Attacker MAC to Inject</span>
+                                <span class="inline-error" id="err-spoof-mac">Invalid MAC</span>
+                            </label>
+                            <input type="text" id="spoof-atk-mac" class="form-input" value="11:22:33:44:55:66" oninput="validateSpoofInputs()">
+                        </div>
+                        <div class="form-group full-width">
+                            <button class="btn-action-primary btn-action-attacker" id="btn-dispatch-spoof" onclick="launchSpoofingAttack()">
+                                <span>Inject Forged Spoofing Frame</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Dynamic Tampering Parameters -->
+                    <div id="subpanel-tamper" class="form-grid" style="display: none;">
+                        <div class="form-group full-width">
+                            <label class="form-label">Field to Tamper in Transit</label>
+                            <select id="tamper-field" class="form-select" onchange="onTamperFieldChange()">
+                                <option value="sender_mac">sender_mac (Hardware Address)</option>
+                                <option value="sender_ip">sender_ip (Source Protocol Address)</option>
+                                <option value="target_ip">target_ip (Destination Protocol Address)</option>
+                                <option value="timestamp">timestamp (Time drift parameter)</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">
+                                <span>Injected Tampered Value</span>
+                                <span class="inline-error" id="err-tamper-val">Invalid Value</span>
+                            </label>
+                            <input type="text" id="tamper-value" class="form-input" value="11:22:33:44:55:66" oninput="validateTamperInputs()">
+                        </div>
+                        <div class="form-group full-width">
+                            <button class="btn-action-primary btn-action-attacker" id="btn-dispatch-tamper" onclick="launchTamperingAttack()">
+                                <span>Inject Tampered Frame</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sub-panel: Replay Parameters -->
+                    <div id="subpanel-replay" class="form-grid" style="display: none;">
+                        <div class="form-group full-width">
+                            <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; background: var(--bg-muted); padding: 8px 10px; border-radius: 4px;">
+                                Intercepts the last authenticated frame and retransmits it without generating a new nonce, testing the receiver's replay protection cache check.
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <button class="btn-action-primary btn-action-attacker" onclick="launchReplayAttack()">
+                                <span>Inject Replay Frame</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Attacker Transmission Log -->
+                    <div>
+                        <div class="section-label">Exploit Injection Log</div>
+                        <div class="live-hash-card" style="font-size: 0.7rem; color: var(--text-body);" id="attacker-status-preview">
+                            No exploit packet dispatched yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- NODE 2: RECEIVER (VERIFIER)                    -->
+            <!-- ============================================== -->
+            <div class="role-panel panel-receiver" id="card-receiver">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-header-title">Receiver (Verifier)</div>
+                        <div class="panel-header-subtitle">Key: gateway_public.pem (Trusted Key Ring)</div>
+                    </div>
+                    <span class="node-tag">Node 2</span>
+                </div>
+
+                <div class="panel-body">
+                    <div class="section-label">Cryptographic Verification Pipeline</div>
+
+                    <!-- Pipeline Badges (Supports PASS, FAIL, WAITING, and SKIPPED) -->
+                    <div class="verification-steps-list">
+                        <div class="verif-step-row">
+                            <span id="lbl-rec-cipher">1. Decrypt AES-256-GCM Payload</span>
+                            <span id="badge-decryption" class="verif-badge wait">WAITING</span>
+                        </div>
+                        <div class="verif-step-row">
+                            <span>2. Verify DSS Signature (Gateway Public Key)</span>
+                            <span id="badge-dss" class="verif-badge wait">WAITING</span>
+                        </div>
+                        <div class="verif-step-row">
+                            <span id="lbl-rec-hash">3. Recompute SHA-512 Hash & Integrity Check</span>
+                            <span id="badge-hash" class="verif-badge wait">WAITING</span>
+                        </div>
+                        <div class="verif-step-row">
+                            <span>4. Check Timestamp Freshness (&le; 60s)</span>
+                            <span id="badge-ts" class="verif-badge wait">WAITING</span>
+                        </div>
+                        <div class="verif-step-row">
+                            <span>5. Check Nonce Cache (Replay Defense)</span>
+                            <span id="badge-nonce" class="verif-badge wait">WAITING</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Verdict Notification Box -->
+                    <div id="verdict-box" class="verdict-box waiting">
+                        <span id="verdict-status-title">[WAITING]</span>
+                        <span id="verdict-status-desc">Awaiting incoming ARP frames for pipeline verification...</span>
+                    </div>
+
+                    <!-- Live Authenticated ARP Cache Table -->
+                    <div class="arp-table-wrap">
+                        <div class="arp-table-header">
+                            <span>Authenticated ARP Cache Table</span>
+                            <button class="btn-table-reset" onclick="resetArpCache()">Reset Table</button>
+                        </div>
+                        <table class="arp-table">
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>MAC Address</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arp-table-body">
+                                <tr>
+                                    <td>192.168.56.1</td>
+                                    <td>AA:BB:CC:DD:EE:FF</td>
+                                    <td><span class="tag-status init">INITIAL GATEWAY</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Recent Packet Stream Feed (Sequence Numbered Table) -->
+        <div class="history-panel">
+            <div class="history-header">
+                <span>Recent Transmitted Packet Sequence Stream</span>
+                <span style="font-size: 0.68rem; font-family: ui-monospace, SFMono-Regular, monospace; color: var(--text-muted);">SHOWING LATEST INGRESS EVENTS</span>
+            </div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Sequence</th>
+                        <th>Type</th>
+                        <th>Time</th>
+                        <th>Sender Binding</th>
+                        <th>Decision</th>
+                        <th>Verification Outcome</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 12px;">No packet activity recorded yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- AWS S3 Management Panel (Components 3 & 4) -->
+        <div id="aws-panel" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+            <div style="background:#f1f5f9;padding:10px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#0f172a;">AWS S3 — Bucket Management &amp; Secure File Upload</span>
+                <span style="font-size:.68rem;font-family:monospace;color:#64748b;">Components 3 &amp; 4 | AES-256-GCM + SHA-256 Integrity</span>
+            </div>
+            <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+                <!-- Left: Bucket Management -->
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px;">Bucket Management</div>
+                    <div style="display:flex;gap:6px;">
+                        <input id="aws-bucket-name" type="text" placeholder="Bucket name (e.g. sree-secure-bucket-01)" style="flex:1;border:1px solid #cbd5e1;border-radius:4px;padding:6px 9px;font-size:.76rem;font-family:monospace;outline:none;">
+                        <select id="aws-region" style="border:1px solid #cbd5e1;border-radius:4px;padding:6px 8px;font-size:.74rem;font-family:monospace;outline:none;">
+                            <option value="us-east-1">us-east-1</option>
+                            <option value="us-west-2">us-west-2</option>
+                            <option value="eu-west-1">eu-west-1</option>
+                            <option value="ap-south-1">ap-south-1</option>
+                        </select>
+                    </div>
+                    <div style="font-size:.65rem;color:#64748b;font-family:monospace;">
+                        Note: AWS requires <strong>all lowercase</strong> letters, numbers, and hyphens (3-63 chars). No uppercase characters allowed.
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button onclick="awsCreateBucket()" style="flex:1;background:#059669;color:#fff;border:none;border-radius:4px;padding:7px;font-size:.74rem;font-weight:800;cursor:pointer;">Create Bucket</button>
+                        <button onclick="awsListBuckets()" style="flex:1;background:#0284c7;color:#fff;border:none;border-radius:4px;padding:7px;font-size:.74rem;font-weight:800;cursor:pointer;">List Buckets</button>
+                        <button onclick="awsDeleteBucket()" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:4px;padding:7px;font-size:.74rem;font-weight:800;cursor:pointer;">Delete Bucket</button>
+                    </div>
+                    <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:4px;">Bucket List</div>
+                    <div id="aws-bucket-list" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:8px;font-size:.72rem;font-family:monospace;min-height:60px;max-height:120px;overflow-y:auto;color:#334155;">Click &quot;List Buckets&quot; to load.</div>
+                    <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;">Objects in Bucket</div>
+                    <div style="display:flex;gap:6px;">
+                        <input id="aws-list-bucket" type="text" placeholder="Bucket name to inspect" style="flex:1;border:1px solid #cbd5e1;border-radius:4px;padding:6px 9px;font-size:.76rem;font-family:monospace;outline:none;">
+                        <button onclick="awsListObjects()" style="background:#475569;color:#fff;border:none;border-radius:4px;padding:6px 10px;font-size:.72rem;font-weight:800;cursor:pointer;">List Objects</button>
+                    </div>
+                    <div id="aws-object-list" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:8px;font-size:.72rem;font-family:monospace;min-height:50px;max-height:100px;overflow-y:auto;color:#334155;">—</div>
+                    <div id="aws-bucket-msg" style="font-size:.72rem;font-weight:700;padding:5px 8px;border-radius:4px;display:none;"></div>
+                </div>
+
+                <!-- Right: Secure Upload (Component 4) -->
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <div style="font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.8px;">Secure File Upload — AES-256-GCM + SHA-256</div>
+                    <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:4px;padding:8px 10px;font-size:.7rem;color:#065f46;line-height:1.5;">
+                        Files are encrypted with <strong>AES-256-GCM</strong> before upload. A <strong>SHA-256</strong> digest of the original plaintext is stored as metadata. On download, integrity is verified before decryption.
+                    </div>
+                    <input id="upload-bucket" type="text" placeholder="Target bucket name" style="border:1px solid #cbd5e1;border-radius:4px;padding:6px 9px;font-size:.76rem;font-family:monospace;outline:none;">
+                    <input id="upload-password" type="password" placeholder="Encryption password (AES-256 key derivation)" style="border:1px solid #cbd5e1;border-radius:4px;padding:6px 9px;font-size:.76rem;font-family:monospace;outline:none;">
+                    <input id="upload-file" type="file" style="font-size:.74rem;">
+                    <button onclick="awsSecureUpload()" style="background:#059669;color:#fff;border:none;border-radius:4px;padding:8px;font-size:.76rem;font-weight:800;cursor:pointer;">Encrypt &amp; Upload to S3</button>
+
+                    <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:4px;">Encrypted Files in Bucket</div>
+                    <div style="display:flex;gap:6px;">
+                        <input id="secure-list-bucket" type="text" placeholder="Bucket name" style="flex:1;border:1px solid #cbd5e1;border-radius:4px;padding:6px 9px;font-size:.76rem;font-family:monospace;outline:none;">
+                        <button onclick="awsListSecureFiles()" style="background:#475569;color:#fff;border:none;border-radius:4px;padding:6px 10px;font-size:.72rem;font-weight:800;cursor:pointer;">List</button>
+                    </div>
+                    <div id="aws-secure-file-list" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:8px;font-size:.7rem;font-family:monospace;min-height:50px;max-height:100px;overflow-y:auto;color:#334155;">—</div>
+                    <div id="aws-upload-msg" style="font-size:.72rem;font-weight:700;padding:5px 8px;border-radius:4px;display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Audit Terminal Feed -->
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <span>Security Audit Log (Layer 2 Packet Inspection)</span>
+                <button class="btn-clear-log" onclick="clearLogs()">Clear Terminal</button>
+            </div>
+            <div id="terminal-feed" class="terminal-logs"></div>
+        </div>
+
+    </div>
+
+    <!-- Script Controller -->
+    <script>
+        let currentMode = "secure";
+        let isStreamActive = false;
+        let selectedAttack = "spoof";
+        let hashDebounceTimer = null;
+        let lastKnownSeq = "PKT-0000";
+
+        // Regex Validators
+        const IP_REGEX = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
+        const MAC_REGEX = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+        const NONCE_REGEX = /^[0-9a-fA-F]{8,64}$/;
+
+        function generateRandomNonce() {
+            const arr = new Uint8Array(16);
+            crypto.getRandomValues(arr);
+            return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function refreshSenderNonce() {
+            document.getElementById("sender-nonce").value = generateRandomNonce();
+            onSenderInputChanged();
+        }
+
+        function setReusedNonceDemo() {
+            document.getElementById("sender-nonce").value = "156adce85310615e373d8ea44a84341b";
+            onSenderInputChanged();
+        }
+
+        function setCurrentTimestamp() {
+            document.getElementById("sender-timestamp").value = (Date.now() / 1000).toFixed(3);
+            onSenderInputChanged();
+        }
+
+        function setExpiredTimestampDemo() {
+            document.getElementById("sender-timestamp").value = ((Date.now() / 1000) - 120).toFixed(3);
+            onSenderInputChanged();
+        }
+
+        function resetSenderDefaults() {
+            document.getElementById("sender-ip").value = "192.168.56.10";
+            document.getElementById("sender-mac").value = "08:00:27:11:22:33";
+            document.getElementById("sender-target-ip").value = "192.168.56.20";
+            document.getElementById("sender-target-mac").value = "08:00:27:AA:BB:CC";
+            document.getElementById("sender-nonce").value = generateRandomNonce();
+            document.getElementById("sender-timestamp").value = "";
+            onSenderInputChanged();
+        }
+
+        // Validate Sender Inputs
+        function validateSenderInputs() {
+            let isValid = true;
+
+            const sIp = document.getElementById("sender-ip");
+            const errSIp = document.getElementById("err-sender-ip");
+            if (!IP_REGEX.test(sIp.value.trim())) {
+                sIp.classList.add("input-invalid");
+                errSIp.style.display = "inline";
+                isValid = false;
+            } else {
+                sIp.classList.remove("input-invalid");
+                errSIp.style.display = "none";
+            }
+
+            const sMac = document.getElementById("sender-mac");
+            const errSMac = document.getElementById("err-sender-mac");
+            if (!MAC_REGEX.test(sMac.value.trim())) {
+                sMac.classList.add("input-invalid");
+                errSMac.style.display = "inline";
+                isValid = false;
+            } else {
+                sMac.classList.remove("input-invalid");
+                errSMac.style.display = "none";
+            }
+
+            const tIp = document.getElementById("sender-target-ip");
+            const errTIp = document.getElementById("err-target-ip");
+            if (!IP_REGEX.test(tIp.value.trim())) {
+                tIp.classList.add("input-invalid");
+                errTIp.style.display = "inline";
+                isValid = false;
+            } else {
+                tIp.classList.remove("input-invalid");
+                errTIp.style.display = "none";
+            }
+
+            const tMac = document.getElementById("sender-target-mac");
+            const errTMac = document.getElementById("err-target-mac");
+            if (!MAC_REGEX.test(tMac.value.trim())) {
+                tMac.classList.add("input-invalid");
+                errTMac.style.display = "inline";
+                isValid = false;
+            } else {
+                tMac.classList.remove("input-invalid");
+                errTMac.style.display = "none";
+            }
+
+            const nonce = document.getElementById("sender-nonce");
+            const errNonce = document.getElementById("err-nonce");
+            if (!NONCE_REGEX.test(nonce.value.trim())) {
+                nonce.classList.add("input-invalid");
+                errNonce.style.display = "inline";
+                isValid = false;
+            } else {
+                nonce.classList.remove("input-invalid");
+                errNonce.style.display = "none";
+            }
+
+            const tsInput = document.getElementById("sender-timestamp");
+            const errTs = document.getElementById("err-timestamp");
+            if (tsInput.value.trim() !== "" && isNaN(parseFloat(tsInput.value.trim()))) {
+                tsInput.classList.add("input-invalid");
+                errTs.style.display = "inline";
+                isValid = false;
+            } else {
+                tsInput.classList.remove("input-invalid");
+                errTs.style.display = "none";
+            }
+
+            const dispatchBtn = document.getElementById("btn-dispatch-sender");
+            const syncBadge = document.getElementById("digest-sync-badge");
+
+            if (isValid) {
+                dispatchBtn.disabled = false;
+                syncBadge.className = "digest-status-pill sync";
+                syncBadge.innerText = "DIGEST SYNCHRONIZED";
+            } else {
+                dispatchBtn.disabled = true;
+                syncBadge.className = "digest-status-pill invalid";
+                syncBadge.innerText = "INPUT VALIDATION ERROR";
+            }
+
+            return isValid;
+        }
+
+        function validateSpoofInputs() {
+            let valid = true;
+            const gw = document.getElementById("spoof-gw-ip");
+            const errGw = document.getElementById("err-spoof-gw");
+            if (!IP_REGEX.test(gw.value.trim())) {
+                gw.classList.add("input-invalid");
+                errGw.style.display = "inline";
+                valid = false;
+            } else {
+                gw.classList.remove("input-invalid");
+                errGw.style.display = "none";
+            }
+
+            const mac = document.getElementById("spoof-atk-mac");
+            const errMac = document.getElementById("err-spoof-mac");
+            if (!MAC_REGEX.test(mac.value.trim())) {
+                mac.classList.add("input-invalid");
+                errMac.style.display = "inline";
+                valid = false;
+            } else {
+                mac.classList.remove("input-invalid");
+                errMac.style.display = "none";
+            }
+
+            document.getElementById("btn-dispatch-spoof").disabled = !valid;
+            return valid;
+        }
+
+        function validateTamperInputs() {
+            let valid = true;
+            const field = document.getElementById("tamper-field").value;
+            const val = document.getElementById("tamper-value");
+            const err = document.getElementById("err-tamper-val");
+
+            if (field.includes("mac")) {
+                if (!MAC_REGEX.test(val.value.trim())) {
+                    val.classList.add("input-invalid");
+                    err.innerText = "Invalid MAC Address";
+                    err.style.display = "inline";
+                    valid = false;
+                } else {
+                    val.classList.remove("input-invalid");
+                    err.style.display = "none";
+                }
+            } else if (field.includes("ip")) {
+                if (!IP_REGEX.test(val.value.trim())) {
+                    val.classList.add("input-invalid");
+                    err.innerText = "Invalid IPv4 Address";
+                    err.style.display = "inline";
+                    valid = false;
+                } else {
+                    val.classList.remove("input-invalid");
+                    err.style.display = "none";
+                }
+            } else {
+                val.classList.remove("input-invalid");
+                err.style.display = "none";
+            }
+
+            document.getElementById("btn-dispatch-tamper").disabled = !valid;
+            return valid;
+        }
+
+        function onTamperFieldChange() {
+            const field = document.getElementById("tamper-field").value;
+            const val = document.getElementById("tamper-value");
+            if (field === "sender_mac") {
+                val.value = "11:22:33:44:55:66";
+            } else if (field === "sender_ip") {
+                val.value = "10.0.0.99";
+            } else if (field === "target_ip") {
+                val.value = "192.168.56.99";
+            } else if (field === "timestamp") {
+                val.value = ((Date.now() / 1000) - 500).toFixed(3);
+            }
+            validateTamperInputs();
+        }
+
+        // Live Real-Time Hash Computation
+        function onSenderInputChanged() {
+            const valid = validateSenderInputs();
+            if (!valid) return;
+
+            clearTimeout(hashDebounceTimer);
+            hashDebounceTimer = setTimeout(computeRealtimeHash, 50);
+        }
+
+        async function computeRealtimeHash() {
+            const sIp = document.getElementById("sender-ip").value.trim();
+            const sMac = document.getElementById("sender-mac").value.trim();
+            const tIp = document.getElementById("sender-target-ip").value.trim();
+            const tMac = document.getElementById("sender-target-mac").value.trim();
+            const nonce = document.getElementById("sender-nonce").value.trim();
+            
+            let tsVal = document.getElementById("sender-timestamp").value.trim();
+            if (!tsVal) {
+                tsVal = (Date.now() / 1000).toFixed(3);
+            }
+
+            const canonical = `${sIp}|${sMac}|${tIp}|${tMac}|${tsVal}|${nonce}`;
+            document.getElementById("live-canonical-output").innerText = `Canonical: ${canonical}`;
+
+            try {
+                if (currentMode === "secure") {
+                    const enc = new TextEncoder();
+                    const hashBuf = await crypto.subtle.digest("SHA-512", enc.encode(canonical));
+                    const hashArray = Array.from(new Uint8Array(hashBuf));
+                    const sha512Hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                    document.getElementById("live-hash-output").innerText = sha512Hex;
+                    document.getElementById("lbl-live-algo").innerText = "REAL-TIME SHA-512 DIGEST";
+                } else {
+                    const res = await fetch("/api/compute_hash", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            sender_ip: sIp,
+                            sender_mac: sMac,
+                            target_ip: tIp,
+                            target_mac: tMac,
+                            timestamp: parseFloat(tsVal),
+                            nonce: nonce
+                        })
+                    });
+                    const data = await res.json();
+                    document.getElementById("live-hash-output").innerText = data.md5_hash;
+                    document.getElementById("lbl-live-algo").innerText = "REAL-TIME MD5 DIGEST (LEGACY)";
+                }
+            } catch (e) {
+                console.error("Hash calculation error:", e);
+            }
+        }
+
+        // Dispatch Custom Authenticated ARP
+        async function sendCustomAuthenticatedArp() {
+            if (!validateSenderInputs()) return;
+
+            const tsInput = document.getElementById("sender-timestamp").value.trim();
+            const payload = {
+                sender_ip: document.getElementById("sender-ip").value.trim(),
+                sender_mac: document.getElementById("sender-mac").value.trim(),
+                target_ip: document.getElementById("sender-target-ip").value.trim(),
+                target_mac: document.getElementById("sender-target-mac").value.trim(),
+                nonce: document.getElementById("sender-nonce").value.trim(),
+                timestamp: tsInput ? parseFloat(tsInput) : null
+            };
+
+            try {
+                const res = await fetch("/api/send_legitimate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (res.status === 400 && data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // If user didn't force a custom nonce, refresh it
+                if (!tsInput) {
+                    document.getElementById("sender-nonce").value = generateRandomNonce();
+                }
+                onSenderInputChanged();
+                updateStatus();
+            } catch (err) {
+                console.error("Transmission error:", err);
+            }
+        }
+
+        // Launch Attacks with Dynamic Parameters
+        async function launchSpoofingAttack() {
+            if (!validateSpoofInputs()) return;
+            const payload = {
+                gateway_ip: document.getElementById("spoof-gw-ip").value.trim(),
+                attacker_mac: document.getElementById("spoof-atk-mac").value.trim(),
+                target_ip: document.getElementById("sender-target-ip").value.trim()
+            };
+            const res = await fetch("/api/simulate_spoofing", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.status === 400 && data.error) {
+                alert(data.error);
+                return;
+            }
+            updateStatus();
+        }
+
+        async function launchTamperingAttack() {
+            if (!validateTamperInputs()) return;
+            const payload = {
+                field_to_tamper: document.getElementById("tamper-field").value,
+                custom_value: document.getElementById("tamper-value").value.trim()
+            };
+            const res = await fetch("/api/simulate_tampering", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.status === 400 && data.error) {
+                alert(data.error);
+                return;
+            }
+            updateStatus();
+        }
+
+        async function launchReplayAttack() {
+            await fetch("/api/simulate_replay", { method: "POST" });
+            updateStatus();
+        }
+
+        function selectAttackMode(mode) {
+            selectedAttack = mode;
+            const btnSpoof = document.getElementById("btn-atk-spoof");
+            const btnTamper = document.getElementById("btn-atk-tamper");
+            const btnReplay = document.getElementById("btn-atk-replay");
+
+            const subSpoof = document.getElementById("subpanel-spoof");
+            const subTamper = document.getElementById("subpanel-tamper");
+            const subReplay = document.getElementById("subpanel-replay");
+
+            [btnSpoof, btnTamper, btnReplay].forEach(b => b.className = "attack-tab-btn");
+            subSpoof.style.display = "none";
+            subTamper.style.display = "none";
+            subReplay.style.display = "none";
+
+            if (mode === "spoof") {
+                btnSpoof.className = "attack-tab-btn selected";
+                subSpoof.style.display = "grid";
+            } else if (mode === "tamper") {
+                btnTamper.className = "attack-tab-btn selected";
+                subTamper.style.display = "grid";
+            } else if (mode === "replay") {
+                btnReplay.className = "attack-tab-btn selected";
+                subReplay.style.display = "grid";
+            }
+        }
+
+        async function toggleCryptoMode() {
+            try {
+                await fetch("/api/toggle_mode", { method: "POST" });
+                updateStatus();
+                computeRealtimeHash();
+            } catch (err) {
+                console.error("Mode toggle error:", err);
+            }
+        }
+
+        async function onStreamConfigChange() {
+            if (isStreamActive) {
+                const interval = document.getElementById("stream-interval-select").value;
+                const mode = document.getElementById("stream-mode-select").value;
+                await fetch("/api/start_stream", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ interval, mode })
+                });
+            }
+        }
+
+        async function toggleStream() {
+            try {
+                if (isStreamActive) {
+                    await fetch("/api/stop_stream", { method: "POST" });
+                } else {
+                    const interval = document.getElementById("stream-interval-select").value;
+                    const mode = document.getElementById("stream-mode-select").value;
+                    await fetch("/api/start_stream", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ interval, mode })
+                    });
+                }
+                updateStatus();
+            } catch (err) {
+                console.error("Stream toggle error:", err);
+            }
+        }
+
+        async function confirmResetSimulation() {
+            if (confirm("Reset the entire simulation state to baseline (counters, nonces, ARP cache, and sequence IDs)?")) {
+                await fetch("/api/reset_simulation", { method: "POST" });
+                resetSenderDefaults();
+                updateStatus();
+            }
+        }
+
+        async function clearLogs() {
+            try {
+                await fetch("/api/clear_logs", { method: "POST" });
+                updateStatus();
+            } catch (err) {
+                console.error("Clear logs error:", err);
+            }
+        }
+
+        async function resetArpCache() {
+            try {
+                await fetch("/api/reset_arp_cache", { method: "POST" });
+                updateStatus();
+            } catch (err) {
+                console.error("Reset ARP error:", err);
+            }
+        }
+
+        // Status Poller
+        async function updateStatus() {
+            try {
+                const response = await fetch("/api/status");
+                const data = await response.json();
+
+                // Mode
+                currentMode = data.config.crypto_mode;
+                const btnMode = document.getElementById("btn-mode");
+                const modeLabel = document.getElementById("mode-label");
+                const lblRecCipher = document.getElementById("lbl-rec-cipher");
+                const lblRecHash = document.getElementById("lbl-rec-hash");
+
+                if (currentMode === "secure") {
+                    btnMode.className = "btn-header mode-secure";
+                    modeLabel.innerText = "MODE: SECURE (SHA-512 / DSS / AES-256-GCM)";
+                    lblRecCipher.innerText = "1. Decrypt AES-256-GCM Payload";
+                    lblRecHash.innerText = "3. Recompute SHA-512 Hash & Integrity Check";
+                } else {
+                    btnMode.className = "btn-header mode-legacy";
+                    modeLabel.innerText = "MODE: LEGACY (MD5 / DSS / DES-CBC)";
+                    lblRecCipher.innerText = "1. Decrypt DES-CBC Payload";
+                    lblRecHash.innerText = "3. Recompute MD5 Hash & Integrity Check";
+                }
+
+                // Stream
+                isStreamActive = data.live_stream_active;
+                const btnStream = document.getElementById("btn-stream");
+                const streamLabel = document.getElementById("stream-label");
+                if (isStreamActive) {
+                    btnStream.className = "btn-header stream-running";
+                    streamLabel.innerText = "PAUSE STREAM";
+                } else {
+                    btnStream.className = "btn-header";
+                    streamLabel.innerText = "START STREAM";
+                }
+
+                // Update select dropdowns to match backend state if not currently focused
+                if (document.activeElement !== document.getElementById("stream-interval-select")) {
+                    document.getElementById("stream-interval-select").value = String(data.live_stream_interval || 2.0);
+                }
+                if (document.activeElement !== document.getElementById("stream-mode-select")) {
+                    document.getElementById("stream-mode-select").value = data.live_stream_mode || "legitimate";
+                }
+
+                // Sequence Counter
+                if (data.seq_counter !== undefined) {
+                    document.getElementById("active-seq-label").innerText = `#PKT-${String(data.seq_counter).padStart(4, '0')}`;
+                }
+
+                // Counters
+                document.getElementById("cnt-valid").innerText = data.counters.valid;
+                document.getElementById("cnt-rejected").innerText = data.counters.rejected;
+                document.getElementById("cnt-spoofing").innerText = data.counters.spoofing;
+                document.getElementById("cnt-replay").innerText = data.counters.replay;
+                document.getElementById("cnt-tampering").innerText = data.counters.tampering;
+
+                // Badges (PASS, FAIL, WAITING, and SKIPPED)
+                updateBadge("badge-decryption", data.pipeline.decryption);
+                updateBadge("badge-dss", data.pipeline.dss_signature);
+                updateBadge("badge-hash", data.pipeline.hash_integrity);
+                updateBadge("badge-ts", data.pipeline.timestamp);
+                updateBadge("badge-nonce", data.pipeline.nonce);
+
+                // Verdict Box
+                const verdictBox = document.getElementById("verdict-box");
+                const verdictTitle = document.getElementById("verdict-status-title");
+                const verdictDesc = document.getElementById("verdict-status-desc");
+                const rec = data.receiver;
+
+                if (rec.decision === "ACCEPT") {
+                    verdictBox.className = "verdict-box accept";
+                    verdictTitle.innerText = `[ACCEPTED ${rec.seq_id || ''}]`;
+                    verdictDesc.innerText = ` ${rec.reason} Binding: ${rec.source_ip} -> ${rec.source_mac}`;
+                } else if (rec.decision === "REJECT") {
+                    verdictBox.className = "verdict-box reject";
+                    verdictTitle.innerText = `[REJECTED ${rec.seq_id || ''}]`;
+                    verdictDesc.innerText = ` ${rec.reason} (${rec.arp_status})`;
+                } else {
+                    verdictBox.className = "verdict-box waiting";
+                    verdictTitle.innerText = "[WAITING]";
+                    verdictDesc.innerText = " Awaiting incoming ARP frames for pipeline verification...";
+                }
+
+                // Sender and Attacker Previews
+                if (data.sender && data.sender.status === "PACKET TRANSMITTED") {
+                    document.getElementById("sender-status-preview").innerText = 
+                        `[TRANSMITTED ${data.sender.seq_id || ''} @ ${data.sender.timestamp}]\nIP: ${data.sender.sender_ip} | MAC: ${data.sender.sender_mac}\nTarget: ${data.sender.target_ip}\nNonce: ${data.sender.nonce}\nCipher: ${data.sender.cipher_mode}`;
+                }
+
+                if (data.attacker && data.attacker.status === "ATTACK INJECTED") {
+                    document.getElementById("attacker-status-preview").innerText = 
+                        `[INJECTED ${data.attacker.seq_id || ''}]\nType: ${data.attacker.attack_type}\nClaim: ${data.attacker.claimed_ip} -> ${data.attacker.attacker_mac}\nResult: ${data.attacker.defense_triggered}`;
+                }
+
+                // ARP Cache Table
+                const tbody = document.getElementById("arp-table-body");
+                if (data.arp_cache && data.arp_cache.length > 0) {
+                    tbody.innerHTML = data.arp_cache.map(entry => {
+                        const isAuth = entry.status.includes("AUTHENTICATED");
+                        const tagClass = isAuth ? "auth" : "init";
+                        return `
+                            <tr>
+                                <td>${entry.ip}</td>
+                                <td>${entry.mac}</td>
+                                <td><span class="tag-status ${tagClass}">${entry.status}</span></td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
+
+                // History Table
+                const historyBody = document.getElementById("history-table-body");
+                if (data.packet_history && data.packet_history.length > 0) {
+                    historyBody.innerHTML = data.packet_history.map(item => {
+                        const typeCls = item.type.toLowerCase();
+                        const isAccept = item.decision === "ACCEPT";
+                        const decColor = isAccept ? "var(--sender-color)" : "var(--attacker-color)";
+                        return `
+                            <tr>
+                                <td><strong>${item.seq_id}</strong></td>
+                                <td><span class="type-pill ${typeCls}">${item.type}</span></td>
+                                <td>${item.timestamp_str}</td>
+                                <td>${item.sender_ip} &rarr; ${item.sender_mac}</td>
+                                <td style="color:${decColor}; font-weight:800;">${item.decision}</td>
+                                <td style="color:var(--text-muted);">${item.reason}</td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
+
+                // Terminal Logs
+                const terminal = document.getElementById("terminal-feed");
+                if (data.logs) {
+                    terminal.innerHTML = data.logs.map(log => {
+                        return `<div class="log-entry ${log.category}"><span>${log.timestamp}</span> ${escapeHtml(log.text)}</div>`;
+                    }).join("");
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+
+            } catch (err) {
+                console.error("Status update error:", err);
+            }
+        }
+
+        function updateBadge(id, state) {
+            const badge = document.getElementById(id);
+            if (!badge) return;
+            const st = (state || "WAITING").toUpperCase();
+            badge.innerText = st;
+            if (st === "PASS") {
+                badge.className = "verif-badge pass";
+            } else if (st === "FAIL") {
+                badge.className = "verif-badge fail";
+            } else if (st === "SKIPPED") {
+                badge.className = "verif-badge skip";
+            } else {
+                badge.className = "verif-badge wait";
+            }
+        }
+
+        function setRoleView(viewMode) {
+            const cardSender = document.getElementById("card-sender");
+            const cardAttacker = document.getElementById("card-attacker");
+            const cardReceiver = document.getElementById("card-receiver");
+
+            const tabAll = document.getElementById("tab-all");
+            const tabSender = document.getElementById("tab-sender");
+            const tabAttacker = document.getElementById("tab-attacker");
+            const tabReceiver = document.getElementById("tab-receiver");
+
+            [tabAll, tabSender, tabAttacker, tabReceiver].forEach(t => t.className = "tab-btn");
+
+            if (viewMode === "all") {
+                tabAll.className = "tab-btn active-all";
+                cardSender.className = "role-panel panel-sender";
+                cardAttacker.className = "role-panel panel-attacker";
+                cardReceiver.className = "role-panel panel-receiver";
+            } else if (viewMode === "sender") {
+                tabSender.className = "tab-btn active-sender";
+                cardSender.className = "role-panel panel-sender focused-role";
+                cardAttacker.className = "role-panel panel-attacker hidden-role";
+                cardReceiver.className = "role-panel panel-receiver hidden-role";
+            } else if (viewMode === "attacker") {
+                tabAttacker.className = "tab-btn active-attacker";
+                cardSender.className = "role-panel panel-sender hidden-role";
+                cardAttacker.className = "role-panel panel-attacker focused-role";
+                cardReceiver.className = "role-panel panel-receiver hidden-role";
+            } else if (viewMode === "receiver") {
+                tabReceiver.className = "tab-btn active-receiver";
+                cardSender.className = "role-panel panel-sender hidden-role";
+                cardAttacker.className = "role-panel panel-attacker hidden-role";
+                cardReceiver.className = "role-panel panel-receiver focused-role";
+            }
+        }
+
+        function escapeHtml(string) {
+            const p = document.createElement("p");
+            p.textContent = string;
+            return p.innerHTML;
+        }
+
+        // AWS S3 Helper Functions
+        function showMsg(id, text, isError) {
+            const el = document.getElementById(id);
+            el.style.display = "block";
+            el.style.background = isError ? "#fee2e2" : "#dcfce7";
+            el.style.color = isError ? "#b91c1c" : "#15803d";
+            el.style.border = `1px solid ${isError ? "#fca5a5" : "#86efac"}`;
+            el.innerText = text;
+        }
+
+        async function awsCreateBucket() {
+            const name = document.getElementById("aws-bucket-name").value.trim();
+            const region = document.getElementById("aws-region").value;
+            if (!name) { showMsg("aws-bucket-msg", "Enter a bucket name.", true); return; }
+
+            // Client-side S3 bucket name validation
+            if (/[A-Z]/.test(name)) {
+                showMsg("aws-bucket-msg", "AWS S3 Error: Bucket names cannot contain uppercase letters. Use only lowercase letters (e.g., '" + name.toLowerCase() + "').", true);
+                return;
+            }
+            if (name.length < 3 || name.length > 63) {
+                showMsg("aws-bucket-msg", "AWS S3 Error: Bucket name must be between 3 and 63 characters long.", true);
+                return;
+            }
+            if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(name)) {
+                showMsg("aws-bucket-msg", "AWS S3 Error: Bucket name must begin and end with a letter/number, and contain only lowercase letters, numbers, and hyphens.", true);
+                return;
+            }
+
+            const res = await fetch("/api/aws/buckets", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({bucket_name: name, region})
+            });
+            const d = await res.json();
+            showMsg("aws-bucket-msg", d.message, !d.success);
+            if (d.success) awsListBuckets();
+        }
+
+        async function awsListBuckets() {
+            const res = await fetch("/api/aws/buckets");
+            const d = await res.json();
+            const el = document.getElementById("aws-bucket-list");
+            if (d.buckets && d.buckets.length > 0) {
+                el.innerHTML = d.buckets.map(b =>
+                    `<div style="padding:2px 0;border-bottom:1px solid #e2e8f0;">[BUCKET] <strong>${b.name}</strong> <span style="color:#94a3b8;">(${b.created})</span></div>`
+                ).join("");
+            } else {
+                el.innerText = d.message || "No buckets found.";
+            }
+        }
+
+        async function awsDeleteBucket() {
+            const name = document.getElementById("aws-bucket-name").value.trim();
+            if (!name) { showMsg("aws-bucket-msg", "Enter a bucket name to delete.", true); return; }
+            if (!confirm(`Delete bucket '${name}' and ALL its contents?`)) return;
+            const res = await fetch(`/api/aws/buckets/${encodeURIComponent(name)}`, {method: "DELETE"});
+            const d = await res.json();
+            showMsg("aws-bucket-msg", d.message, !d.success);
+            if (d.success) awsListBuckets();
+        }
+
+        async function awsListObjects() {
+            const name = document.getElementById("aws-list-bucket").value.trim();
+            if (!name) return;
+            const res = await fetch(`/api/aws/buckets/${encodeURIComponent(name)}/objects`);
+            const d = await res.json();
+            const el = document.getElementById("aws-object-list");
+            if (d.objects && d.objects.length > 0) {
+                el.innerHTML = d.objects.map(o =>
+                    `<div style="padding:2px 0;border-bottom:1px solid #e2e8f0;">[FILE] ${o.key} <span style="color:#94a3b8;">(${o.size}B)</span></div>`
+                ).join("");
+            } else {
+                el.innerText = d.message || "No objects.";
+            }
+        }
+
+        async function awsSecureUpload() {
+            const bucket = document.getElementById("upload-bucket").value.trim();
+            const password = document.getElementById("upload-password").value.trim();
+            const fileInput = document.getElementById("upload-file");
+            if (!bucket || !password || !fileInput.files.length) {
+                showMsg("aws-upload-msg", "Bucket, password, and file are all required.", true);
+                return;
+            }
+            const formData = new FormData();
+            formData.append("bucket_name", bucket);
+            formData.append("password", password);
+            formData.append("file", fileInput.files[0]);
+            const res = await fetch("/api/aws/secure-upload", {method: "POST", body: formData});
+            const d = await res.json();
+            showMsg("aws-upload-msg", d.message + (d.metadata && d.metadata.sha256_original ? ` | SHA-256: ${d.metadata.sha256_original.substring(0,16)}...` : ""), !d.success);
+        }
+
+        async function awsListSecureFiles() {
+            const bucket = document.getElementById("secure-list-bucket").value.trim();
+            if (!bucket) return;
+            const res = await fetch(`/api/aws/secure-files?bucket=${encodeURIComponent(bucket)}`);
+            const d = await res.json();
+            const el = document.getElementById("aws-secure-file-list");
+            if (d.files && d.files.length > 0) {
+                el.innerHTML = d.files.map(f =>
+                    `<div style="padding:2px 0;border-bottom:1px solid #e2e8f0;">🔒 ${f.original_filename} <span style="color:#94a3b8;">(${f.size}B | SHA-256: ${f.sha256.substring(0,12)}...)</span></div>`
+                ).join("");
+            } else {
+                el.innerText = d.message || "No encrypted files found.";
+            }
+        }
+
+        // Initialize on load
+        onSenderInputChanged();
+        updateStatus();
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>
